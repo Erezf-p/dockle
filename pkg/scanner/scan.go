@@ -3,7 +3,9 @@ package scanner
 import (
 	"archive/tar"
 	"context"
+	"errors"
 	"flag"
+	"fmt"
 	"os"
 	"path/filepath"
 
@@ -21,6 +23,9 @@ import (
 	"golang.org/x/crypto/ssh/terminal"
 )
 
+var ErrorCreateDockerExtractor = errors.New("error create docker extractor")
+var ErrorAnalyze = errors.New("error analyze")
+
 func ScanImage(ctx context.Context, imageName, filePath string, dockerOption deckodertypes.DockerOption) (assessments []*types.Assessment, err error) {
 	var files deckodertypes.FileMap
 	filterFunc := createPathPermissionFilterFunc(assessor.LoadRequiredFiles(), assessor.LoadRequiredPermissions())
@@ -29,12 +34,12 @@ func ScanImage(ctx context.Context, imageName, filePath string, dockerOption dec
 	if imageName != "" {
 		ext, cleanup, err = docker.NewDockerExtractor(ctx, imageName, dockerOption)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("%v. %w", err, ErrorCreateDockerExtractor)
 		}
 	} else if filePath != "" {
 		ext, cleanup, err = docker.NewDockerArchiveExtractor(ctx, filePath, dockerOption)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("%v. %w", err, ErrorCreateDockerExtractor)
 		}
 	} else {
 		return nil, types.ErrSetImageOrFile
@@ -42,7 +47,7 @@ func ScanImage(ctx context.Context, imageName, filePath string, dockerOption dec
 	defer cleanup()
 	ac := analyzer.New(ext)
 	if files, err = ac.Analyze(ctx, filterFunc); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("%v. %w", err, ErrorAnalyze)
 	}
 
 	assessments = assessor.GetAssessments(files)

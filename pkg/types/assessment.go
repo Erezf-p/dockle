@@ -20,7 +20,7 @@ type ImageAssessment struct {
 	Image           string                 `json:"image"`
 	Success         bool                   `json:"success"`
 	ScanUUID        string                 `json:"scanuuid"`
-	ScanErrMsg      string                 `json:"scanErrMsg"`
+	ScanErr         error                 `json:"scanErrMsg"`
 }
 
 func CreateAssessmentMap(as AssessmentSlice, ignoreMap map[string]struct{}) AssessmentMap {
